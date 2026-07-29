@@ -74,6 +74,45 @@ namespace fre {
         return PriceTree.GetNode(0, 0);
     }
 
+    double OptionCalculation::PriceBySnellLowMemory(const BinomialTreeModel& Model)
+    {
+        const double q = Model.RiskNeutProb();
+        const double R = Model.GetR();
+        const int N = pOption->GetN();
+
+        const double U = Model.GetU();
+        const double D = Model.GetD();
+        const double S0 = Model.GetS0();
+        // CalculateAssetPrice(n, i) is S0 * U^i * D^(n-i), which costs two pow() calls per
+        // node, so the full sweep pays O(N^2) of them and that dominates the runtime. Within
+        // a level the ratio between adjacent nodes is the constant U/D, so one pow per level
+        // plus a multiply per node gives the same values for O(N) pow calls total.
+        const double UD = U / D;
+
+        vector<double> Price(N + 1);
+        double s = S0 * std::pow(D, N);
+        for (int i = 0; i <= N; i++)
+        {
+            Price[i] = pOption->Payoff(s);
+            s *= UD;
+        }
+
+        // Writing Price[i] from Price[i] and Price[i+1] means index i is consumed before it
+        // is overwritten, so ascending i is safe in place with no scratch buffer.
+        for (int n = N - 1; n >= 0; n--)
+        {
+            double sn = S0 * std::pow(D, n);
+            for (int i = 0; i <= n; i++)
+            {
+                const double ContVal = (q * Price[i + 1] + (1.0 - q) * Price[i]) / R;
+                const double ExerciseVal = pOption->Payoff(sn);
+                Price[i] = (ContVal > ExerciseVal) ? ContVal : ExerciseVal;
+                sn *= UD;
+            }
+        }
+        return Price[0];
+    }
+
     double OptionCalculation::PriceByCRR(const BinomialTreeModel& Model,
                                          BinLattice<double>& PriceTree,
                                          BinLattice<double>& xTree,

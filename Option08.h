@@ -57,5 +57,10 @@ namespace fre {
         double PriceBySnell(const BinomialTreeModel& Model,
                             BinLattice<double>& PriceTree,
                             BinLattice<bool>& StoppingTree);
+        // Same American price as PriceBySnell, in O(N) memory instead of O(N^2).
+        // Backward induction only ever reads level n+1 while writing level n, so one
+        // vector walked in place is sufficient when the stopping tree is not needed.
+        // Use PriceBySnell when you actually want the exercise boundary.
+        double PriceBySnellLowMemory(const BinomialTreeModel& Model);
     };
 }
