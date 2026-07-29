@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compiler version
+        run: g++ --version
+
+      - name: Build
+        run: make
+
+      # Validates against Black-Scholes and put-call parity, and pins the arbitrage checks.
+      - name: Test
+        run: make test
+
+      # The full benchmark reaches 50,000 steps and takes minutes on the O(N^2) path, so CI
+      # runs a smaller sweep purely to prove the bench target still compiles and agrees.
+      - name: Benchmark, smoke only
+        run: |
+          g++ -Wall -Wextra -std=c++17 -O2 -DBENCH_MAX_STEPS=5000 \
+            -o run_bench tests/bench.cpp Option08.o BinomialTreeModel02.o
+          ./run_bench
