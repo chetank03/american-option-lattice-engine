@@ -78,8 +78,5 @@ U = 1.15125
 D = 0.86862
 R = 1.00545
 
-Input data checked
-There is no arbitrage
-
 American call option price = 21.682
 */

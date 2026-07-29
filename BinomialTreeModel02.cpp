@@ -19,6 +19,7 @@ namespace fre {
         U = U_;
         D = D_;
         R = R_;
+        ValidateInputData();
     }
 
     void BinomialTreeModel::GetInputData()
@@ -36,15 +37,20 @@ namespace fre {
 
     void BinomialTreeModel::ValidateInputData() const
     {
-        if (S0 <= 0.0 || U <= 0.0 || D <= 0.0 || U <= D || R <= 0.0)
+        if (S0 <= 0.0 || U <= 0.0 || D <= 0.0 || R <= 0.0)
         {
-            throw std::invalid_argument("Illegal data ranges: S0, U, D, R must be positive and U > D");
+            throw std::invalid_argument("Illegal data ranges: S0, U, D, R must all be positive");
         }
-        if (R >= U || U <= D)
+        if (U <= D)
         {
-            throw std::invalid_argument("Arbitrage exists: R must be less than U and U > D");
+            throw std::invalid_argument("Illegal data ranges: U must be greater than D");
         }
-        std::cout << "Input data checked" << std::endl;
-        std::cout << "There is no arbitrage" << std::endl << std::endl;
+        // No-arbitrage requires D < R < U. Checking only R < U leaves R <= D through, which
+        // makes RiskNeutProb() = (R - D) / (U - D) zero or negative and silently corrupts
+        // every price downstream instead of failing.
+        if (R >= U || R <= D)
+        {
+            throw std::invalid_argument("Arbitrage exists: R must satisfy D < R < U");
+        }
     }
 }
