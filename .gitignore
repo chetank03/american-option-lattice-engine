@@ -1,2 +1,13 @@
 *.o
+
+# Build output
+lattice
+run_tests
+run_bench
+*.exe
+
+# Old homework-named binary
 HW07
+
+# Local worklist, not documentation
+EXTENSION-PLAN.md
